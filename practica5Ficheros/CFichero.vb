@@ -36,6 +36,7 @@ Public Class CFichero
         End Using
     End Sub
 
+
     Public Sub aniadirReg(ByVal referencia As String, ByVal precio As Double)
         pFS.Seek(0, SeekOrigin.End)
         pBW.Write(referencia)
@@ -53,4 +54,55 @@ Public Class CFichero
         End Using
         Return reg
     End Function
+
+    Public Function buscarReg(ByVal referencia As String) As Integer
+        Dim reg As CRegistro
+        For i As Integer = 0 To iNregs - 1
+            reg = leerReg(i)
+            If reg.Referencia = referencia Then
+                Return i
+            End If
+        Next
+        Return -1
+    End Function
+
+    Public Function eliminarReg(ByVal referencia As String) As Boolean
+        'Este método se puede aprovechar del creado anteriormente
+        Dim encontrado As Boolean = False
+        Dim reg As CRegistro
+        For i As Integer = 0 To iNregs - 1
+            reg = leerReg(i)
+            If reg.Referencia = referencia Then
+                modificarReg(i, New CRegistro("-1", 0.0))
+                bBorrar = True
+                encontrado = True
+            End If
+        Next
+        Return encontrado
+    End Function
+
+    Public Function hayRegsEliminados() As Boolean
+        Return bBorrar
+    End Function
+
+    Public Sub actualizarFich()
+        If bBorrar Then
+            Dim nuevoNombre As String = sFicheroActual & ".temp"
+            Using pFSTemp As New FileStream(nuevoNombre, FileMode.Create, FileAccess.Write)
+                Dim pBWTemp As New BinaryWriter(pFSTemp)
+                For i As Integer = 0 To iNregs - 1
+                    pFS.Seek(i * iTamanioReg, SeekOrigin.Begin)
+                    Dim referencia As String = pBR.ReadString
+                    Dim precio As Double = pBR.ReadDouble
+                    If Not String.IsNullOrEmpty(referencia) Then
+                        pBWTemp.Write(referencia)
+                        pBWTemp.Write(precio)
+                    End If
+                Next
+                pBWTemp.Close()
+            End Using
+            File.Replace(nuevoNombre, sFicheroActual, Nothing)
+            bBorrar = False
+        End If
+    End Sub
 End Class
